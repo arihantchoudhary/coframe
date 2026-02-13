@@ -25,7 +25,7 @@ S3_BUCKET = os.environ.get("S3_BUCKET", "coframe-uploads-050451400186")
 
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", "")
 MAILGUN_DOMAIN = os.environ.get("MAILGUN_DOMAIN", "ai.complete.city")
-MAILGUN_FROM = os.environ.get("MAILGUN_FROM", f"Same Data Writer <noreply@{MAILGUN_DOMAIN}>")
+MAILGUN_FROM = os.environ.get("MAILGUN_FROM", f"Petryk Pyatochkin <noreply@{MAILGUN_DOMAIN}>")
 NOTIFY_EMAIL = "arihant@complete.city"
 
 EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
@@ -52,16 +52,17 @@ def build_email_html(item_id: str, data: dict, email: str) -> str:
         <div style="background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
 
           <!-- Header -->
-          <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); padding: 32px; text-align: center;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Same Data Writer</h1>
-            <p style="margin: 8px 0 0; color: #bfdbfe; font-size: 14px;">Data Successfully Saved</p>
+          <div style="background: linear-gradient(135deg, #db2777 0%, #f97316 100%); padding: 32px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 8px;">&#x1F437;</div>
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Petryk Pyatochkin</h1>
+            <p style="margin: 8px 0 0; color: #fecdd3; font-size: 14px;">Memory Saved Successfully</p>
           </div>
 
           <!-- Body -->
           <div style="padding: 32px;">
             <p style="margin: 0 0 8px; color: #6b7280; font-size: 13px;">{timestamp}</p>
             <p style="margin: 0 0 24px; color: #111827; font-size: 16px;">
-              Your data has been written to the database.
+              Petryk has saved this to his brain. Here&rsquo;s what he remembers:
             </p>
 
             <!-- Item ID -->
@@ -92,7 +93,7 @@ def build_email_html(item_id: str, data: dict, email: str) -> str:
           <!-- Footer -->
           <div style="background: #f9fafb; padding: 20px 32px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-              Same Data Writer &mdash; Powered by DynamoDB + FastAPI
+              &#x1F437; Petryk Pyatochkin &mdash; he remembers everything so you don&rsquo;t have to.
             </p>
           </div>
         </div>
@@ -128,7 +129,7 @@ def create_item(body: dict):
         recipients.append(NOTIFY_EMAIL)
     send_email(
         to_list=recipients,
-        subject=f"Data Saved — {item_id[:8]}",
+        subject=f"Petryk remembers — {item_id[:8]}",
         html=html,
     )
 

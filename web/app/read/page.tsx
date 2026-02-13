@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,14 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
 const API_URL =
@@ -27,21 +20,13 @@ const API_URL =
 type Item = Record<string, unknown>;
 
 export default function ReadPage() {
+  const router = useRouter();
   const [allItems, setAllItems] = useState<Item[]>([]);
   const [loadingAll, setLoadingAll] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [saving, setSaving] = useState<string | null>(null);
-
-  // inline editing state: { itemId: { field: editedValue } }
-  const [edits, setEdits] = useState<Record<string, Record<string, string>>>({});
-  const [editingCell, setEditingCell] = useState<{ id: string; col: string } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // new field state
-  const [addingFieldFor, setAddingFieldFor] = useState<string | null>(null);
-  const [newFieldName, setNewFieldName] = useState("");
-  const [newFieldValue, setNewFieldValue] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   async function loadAll() {
     setLoadingAll(true);
@@ -61,63 +46,6 @@ export default function ReadPage() {
     loadAll();
   }, []);
 
-  useEffect(() => {
-    if (editingCell && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editingCell]);
-
-  function startEdit(id: string, col: string, currentValue: string) {
-    if (col === "id") return; // don't edit the id
-    setEditingCell({ id, col });
-    setEdits((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [col]: currentValue },
-    }));
-  }
-
-  function updateEdit(id: string, col: string, value: string) {
-    setEdits((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [col]: value },
-    }));
-  }
-
-  async function saveCell(id: string, col: string) {
-    setEditingCell(null);
-    const value = edits[id]?.[col];
-    if (value === undefined) return;
-
-    // find the original item
-    const original = allItems.find((item) => item.id === id);
-    if (!original) return;
-
-    // check if actually changed
-    const originalValue = original[col] !== undefined ? String(original[col]) : "";
-    if (value === originalValue) return;
-
-    setSaving(id);
-    setError("");
-    setMessage("");
-    try {
-      const updated = { ...original, [col]: value };
-      delete updated.id; // don't send id in body
-      const res = await fetch(`${API_URL}/data/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setMessage(`Updated "${col}" for ${(id as string).slice(0, 8)}...`);
-      loadAll();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(null);
-    }
-  }
-
   async function handleDelete(id: string) {
     setError("");
     setMessage("");
@@ -125,50 +53,33 @@ export default function ReadPage() {
       const res = await fetch(`${API_URL}/data/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMessage(`Deleted ${id.slice(0, 8)}...`);
+      if (expanded === id) setExpanded(null);
       loadAll();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
 
-  async function handleAddField(id: string) {
-    if (!newFieldName.trim()) return;
-    setError("");
-    setMessage("");
-    const original = allItems.find((item) => item.id === id);
-    if (!original) return;
-
-    try {
-      const updated = { ...original, [newFieldName.trim()]: newFieldValue };
-      delete updated.id;
-      const res = await fetch(`${API_URL}/data/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setMessage(`Added field "${newFieldName}" to ${(id as string).slice(0, 8)}...`);
-      setAddingFieldFor(null);
-      setNewFieldName("");
-      setNewFieldValue("");
-      loadAll();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+  function handleEdit(item: Item) {
+    const params = new URLSearchParams();
+    params.set("prefill", JSON.stringify(item));
+    router.push(`/write?${params.toString()}`);
   }
 
-  // collect all unique keys across items for table columns
-  const allKeys = Array.from(
-    new Set(allItems.flatMap((item) => Object.keys(item)))
-  );
-  const columns = ["id", ...allKeys.filter((k) => k !== "id")];
+  const filtered = search
+    ? allItems.filter((item) =>
+        JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
+      )
+    : allItems;
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-6">
+    <div className="max-w-6xl mx-auto p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Read / Update / Delete</h1>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          🧠 Petryk&apos;s Brain
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Double-click any cell to edit inline. Changes save on blur or Enter.
+          Everything Petryk remembers. Click any item to expand. Edit to open in the write page with full multimodal support.
         </p>
       </div>
 
@@ -184,235 +95,168 @@ export default function ReadPage() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Database</CardTitle>
-              <CardDescription>
-                {allItems.length} item{allItems.length !== 1 ? "s" : ""} — double-click to edit, changes auto-save
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadAll}
-              disabled={loadingAll}
-            >
-              {loadingAll ? "Refreshing..." : "Refresh"}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {allItems.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No items yet.</p>
-          ) : (
-            <div className="rounded-md border overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {columns.map((col) => (
-                      <TableHead key={col} className="whitespace-nowrap">
-                        {col}
-                      </TableHead>
-                    ))}
-                    <TableHead className="w-[140px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allItems.map((row) => {
-                    const rowId = row.id as string;
-                    const isRowSaving = saving === rowId;
-                    return (
-                      <TableRow
-                        key={rowId}
-                        className={isRowSaving ? "opacity-50" : ""}
-                      >
-                        {columns.map((col) => {
-                          const isEditing =
-                            editingCell?.id === rowId &&
-                            editingCell?.col === col;
-                          const rawValue =
-                            row[col] !== undefined
-                              ? typeof row[col] === "object"
-                                ? JSON.stringify(row[col])
-                                : String(row[col])
-                              : "";
-
-                          if (isEditing) {
-                            return (
-                              <TableCell key={col} className="p-0">
-                                <Input
-                                  ref={inputRef}
-                                  className="h-8 rounded-none border-0 border-b-2 border-blue-500 bg-blue-500/10 font-mono text-xs focus-visible:ring-0"
-                                  value={edits[rowId]?.[col] ?? rawValue}
-                                  onChange={(e) =>
-                                    updateEdit(rowId, col, e.target.value)
-                                  }
-                                  onBlur={() => saveCell(rowId, col)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") saveCell(rowId, col);
-                                    if (e.key === "Escape")
-                                      setEditingCell(null);
-                                  }}
-                                />
-                              </TableCell>
-                            );
-                          }
-
-                          return (
-                            <TableCell
-                              key={col}
-                              className={`font-mono text-xs ${
-                                col === "id"
-                                  ? "text-muted-foreground"
-                                  : "cursor-pointer hover:bg-muted/50"
-                              }`}
-                              onDoubleClick={() =>
-                                startEdit(rowId, col, rawValue)
-                              }
-                            >
-                              {col === "id" ? (
-                                <span title={rawValue}>
-                                  {rawValue.slice(0, 8)}...
-                                </span>
-                              ) : (
-                                rawValue || "—"
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell>
-                          <div className="flex gap-1">
-                            {addingFieldFor === rowId ? (
-                              <div className="flex gap-1 items-center">
-                                <Input
-                                  className="h-7 w-20 text-xs"
-                                  placeholder="field"
-                                  value={newFieldName}
-                                  onChange={(e) =>
-                                    setNewFieldName(e.target.value)
-                                  }
-                                />
-                                <Input
-                                  className="h-7 w-20 text-xs"
-                                  placeholder="value"
-                                  value={newFieldValue}
-                                  onChange={(e) =>
-                                    setNewFieldValue(e.target.value)
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter")
-                                      handleAddField(rowId);
-                                  }}
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => handleAddField(rowId)}
-                                >
-                                  Add
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => setAddingFieldFor(null)}
-                                >
-                                  X
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => {
-                                    setAddingFieldFor(rowId);
-                                    setNewFieldName("");
-                                    setNewFieldValue("");
-                                  }}
-                                >
-                                  + Field
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-7 px-2 text-xs"
-                                  onClick={() => handleDelete(rowId)}
-                                >
-                                  Delete
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick lookup */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Lookup</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <QuickLookup />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function QuickLookup() {
-  const [fetchId, setFetchId] = useState("");
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleFetch() {
-    setError("");
-    setResult(null);
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/data/${fetchId}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setResult(data);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex gap-3">
+      {/* Controls */}
+      <div className="flex items-center gap-3">
         <Input
-          className="font-mono"
-          value={fetchId}
-          onChange={(e) => setFetchId(e.target.value)}
-          placeholder="Enter item ID..."
-          onKeyDown={(e) => e.key === "Enter" && fetchId && handleFetch()}
+          placeholder="Search Petryk's memory..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
         />
-        <Button onClick={handleFetch} disabled={loading || !fetchId}>
-          {loading ? "Loading..." : "Fetch"}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={loadAll}
+          disabled={loadingAll}
+        >
+          {loadingAll ? "Loading..." : "Refresh"}
         </Button>
+        <Badge variant="secondary" className="ml-auto">
+          {filtered.length} item{filtered.length !== 1 ? "s" : ""}
+        </Badge>
       </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
-      {result && (
-        <pre className="bg-muted rounded-lg p-4 text-sm font-mono overflow-auto">
-          {JSON.stringify(result, null, 2)}
-        </pre>
+
+      {/* Items */}
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <div className="text-4xl mb-3">🐷</div>
+            <p className="text-muted-foreground">
+              {search
+                ? "Nothing matches that search."
+                : "Petryk's brain is empty. Send him some data!"}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((item) => {
+            const id = item.id as string;
+            const isExpanded = expanded === id;
+            const isFile = item.type === "file";
+
+            // Get a preview of the item
+            const previewKeys = Object.keys(item).filter(
+              (k) => !["id", "type"].includes(k)
+            );
+            const previewText = previewKeys
+              .slice(0, 3)
+              .map((k) => {
+                const v = item[k];
+                const val =
+                  typeof v === "object" ? JSON.stringify(v) : String(v);
+                return `${k}: ${val.length > 50 ? val.slice(0, 50) + "..." : val}`;
+              })
+              .join(" · ");
+
+            return (
+              <Card
+                key={id}
+                className={`transition-all cursor-pointer hover:border-muted-foreground/50 ${
+                  isExpanded ? "border-pink-500/40" : ""
+                }`}
+                onClick={() => setExpanded(isExpanded ? null : id)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">
+                      {isFile ? "📎" : "💾"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm font-mono">
+                        {isFile
+                          ? (item.filename as string) || id
+                          : (item.message as string)?.slice(0, 60) || id}
+                      </CardTitle>
+                      <CardDescription className="text-xs truncate mt-0.5">
+                        {previewText}
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline" className="text-xs shrink-0">
+                      {id.slice(0, 8)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+
+                {isExpanded && (
+                  <CardContent
+                    className="pt-2 space-y-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Full data display */}
+                    <div className="rounded-lg bg-muted p-4 overflow-auto">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {Object.entries(item).map(([key, value]) => (
+                            <tr key={key} className="border-b border-border/50 last:border-0">
+                              <td className="py-2 pr-4 font-medium text-muted-foreground align-top whitespace-nowrap w-[120px]">
+                                {key}
+                              </td>
+                              <td className="py-2 font-mono text-xs break-all">
+                                {typeof value === "object"
+                                  ? JSON.stringify(value, null, 2)
+                                  : String(value)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* File preview */}
+                    {isFile && item.url && (
+                      <div>
+                        {(item.content_type as string)?.startsWith("image/") ? (
+                          <img
+                            src={item.url as string}
+                            alt={item.filename as string}
+                            className="max-h-64 rounded-lg border"
+                          />
+                        ) : (
+                          <a
+                            href={item.url as string}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-400 hover:underline"
+                          >
+                            Open file: {item.filename as string}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleEdit(item)}
+                      >
+                        Edit / Add More
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(id)}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          navigator.clipboard.writeText(id);
+                          setMessage("Copied ID to clipboard");
+                        }}
+                      >
+                        Copy ID
+                      </Button>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );

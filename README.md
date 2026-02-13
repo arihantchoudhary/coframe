@@ -1,6 +1,6 @@
-# Same Data Writer
+# Petryk Pyatochkin
 
-Full-stack data platform with a FastAPI backend, DynamoDB storage, Mailgun email integration, and multi-client frontends.
+He remembers everything so you don't have to. Full-stack data platform with a FastAPI backend, DynamoDB storage, Mailgun email integration, and multi-client frontends.
 
 ## Architecture
 

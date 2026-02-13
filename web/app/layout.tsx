@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Same Data Writer — Send anything to this agent",
-  description: "Send data, files, and documents to an AI agent. Get instant email confirmations. Store anything, access anywhere.",
+  title: "Petryk Pyatochkin — Your AI Agent",
+  description: "Send data, files, and documents to Petryk. He remembers everything.",
 };
 
 export default function RootLayout({
@@ -29,21 +29,21 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <nav className="border-b border-border px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center gap-6">
-            <Link href="/" className="text-lg font-bold">
-              Same Data Writer
+          <div className="max-w-6xl mx-auto flex items-center gap-6">
+            <Link href="/" className="text-lg font-bold flex items-center gap-2">
+              <span className="text-2xl">🐷</span> Petryk
             </Link>
             <Link
               href="/write"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Write
+              Write to Petryk
             </Link>
             <Link
               href="/read"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Read / Update / Delete
+              Petryk&apos;s Brain
             </Link>
             <Link
               href="/upload"

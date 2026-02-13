@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +50,7 @@ type AttachedFile = {
 };
 
 export default function WritePage() {
+  const searchParams = useSearchParams();
   const [message, setMessage] = useState("");
   const [extraFields, setExtraFields] = useState<{ key: string; value: string }[]>([]);
   const [email, setEmail] = useState("");
@@ -58,8 +60,31 @@ export default function WritePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Prefill from URL params (when editing from the read page)
+  const prefillRaw = useMemo(() => searchParams.get("prefill"), [searchParams]);
+  useEffect(() => {
+    if (!prefillRaw) return;
+    try {
+      const data = JSON.parse(prefillRaw);
+      if (data.id) setEditingId(data.id);
+      if (data.email) setEmail(data.email);
+      if (data.message) setMessage(String(data.message));
+      // Load extra fields from remaining keys
+      const skipKeys = new Set(["id", "email", "message", "type", "files"]);
+      const fields: { key: string; value: string }[] = [];
+      for (const [k, v] of Object.entries(data)) {
+        if (skipKeys.has(k)) continue;
+        fields.push({ key: k, value: typeof v === "object" ? JSON.stringify(v) : String(v) });
+      }
+      if (fields.length > 0) setExtraFields(fields);
+    } catch {
+      // invalid prefill, ignore
+    }
+  }, [prefillRaw]);
 
   function validateEmail(value: string) {
     setEmail(value);
@@ -181,8 +206,10 @@ export default function WritePage() {
         body.files = uploadedFiles;
       }
 
-      const res = await fetch(`${API_URL}/data`, {
-        method: "POST",
+      const url = editingId ? `${API_URL}/data/${editingId}` : `${API_URL}/data`;
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -220,17 +247,23 @@ export default function WritePage() {
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Send Data</h1>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          {editingId ? "✏️ Update Memory" : "💬 Talk to Petryk"}
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Send anything — text, key-value data, images, videos, audio, documents. All in one go.
+          {editingId
+            ? `Editing item ${editingId.slice(0, 8)}... — change anything and add more files.`
+            : "Send anything — text, key-value data, images, videos, audio, documents. Petryk remembers it all."}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>New Submission</CardTitle>
+          <CardTitle>{editingId ? "Edit Existing Memory" : "New Memory"}</CardTitle>
           <CardDescription>
-            Fill in what you need. Attach files by dragging or browsing. A confirmation email will be sent.
+            {editingId
+              ? "Update the fields below and attach new files. Petryk will update his memory."
+              : "Fill in what you need. Attach files by dragging or browsing. Petryk will send you a confirmation email."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -349,7 +382,7 @@ export default function WritePage() {
             disabled={loading || !!emailError || !email}
             className="w-full h-12 text-base"
           >
-            {loading ? "Sending..." : "Send Everything"}
+            {loading ? "Sending..." : editingId ? "Update Memory" : "Send to Petryk"}
           </Button>
         </CardContent>
       </Card>
