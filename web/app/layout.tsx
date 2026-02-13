@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Coframe Data",
-  description: "Coframe data management",
+  title: "Same Data Writer — Send anything to this agent",
+  description: "Send data, files, and documents to an AI agent. Get instant email confirmations. Store anything, access anywhere.",
 };
 
 export default function RootLayout({
