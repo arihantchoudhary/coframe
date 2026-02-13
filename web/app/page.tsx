@@ -33,6 +33,14 @@ export default function Home() {
           I&apos;ll remember it all. I&apos;ll even send you an email to confirm.
         </p>
 
+        <p className="mt-4 text-sm text-muted-foreground/70 max-w-lg leading-relaxed italic">
+          Why Petryk? He&apos;s the restless, enthusiastic kid who never stops — always
+          curious, always collecting, always remembering. That energy felt right.
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground/50">
+          Built by <span className="text-muted-foreground/70 font-medium">Arihant Choudhary</span>
+        </p>
+
         <div className="flex flex-col sm:flex-row gap-4 mt-10">
           <Link href="/write">
             <Button size="lg" className="text-base px-8 h-12">
@@ -110,6 +118,7 @@ export default function Home() {
       <footer className="border-t border-border px-6 py-6 text-center">
         <p className="text-xs text-muted-foreground">
           🐷 Petryk Pyatochkin — he remembers everything so you don&apos;t have to.
+          Built by Arihant Choudhary.
         </p>
       </footer>
     </div>
