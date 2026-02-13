@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
 const API_URL =
@@ -28,6 +36,8 @@ export default function ReadPage() {
   const [message, setMessage] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"cards" | "table">("cards");
+  const [filterUser, setFilterUser] = useState<string>("all");
 
   async function loadAll() {
     setLoadingAll(true);
@@ -46,6 +56,15 @@ export default function ReadPage() {
   useEffect(() => {
     loadAll();
   }, []);
+
+  // Extract unique users (emails)
+  const users = useMemo(() => {
+    const emails = new Set<string>();
+    allItems.forEach((item) => {
+      if (item.email) emails.add(String(item.email));
+    });
+    return Array.from(emails).sort();
+  }, [allItems]);
 
   async function handleDelete(id: string) {
     setError("");
@@ -67,11 +86,18 @@ export default function ReadPage() {
     router.push(`/write?${params.toString()}`);
   }
 
-  const filtered = search
-    ? allItems.filter((item) =>
+  const filtered = useMemo(() => {
+    let items = allItems;
+    if (filterUser !== "all") {
+      items = items.filter((item) => String(item.email || "") === filterUser);
+    }
+    if (search) {
+      items = items.filter((item) =>
         JSON.stringify(item).toLowerCase().includes(search.toLowerCase())
-      )
-    : allItems;
+      );
+    }
+    return items;
+  }, [allItems, filterUser, search]);
 
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-6">
@@ -80,7 +106,7 @@ export default function ReadPage() {
           🧠 Petryk&apos;s Brain
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Everything Petryk remembers. Click any item to expand. Edit to open in the write page with full multimodal support.
+          Everything Petryk remembers. Filter by user to see who told him what.
         </p>
       </div>
 
@@ -97,13 +123,41 @@ export default function ReadPage() {
       )}
 
       {/* Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Input
           placeholder="Search Petryk's memory..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
+        <select
+          value={filterUser}
+          onChange={(e) => setFilterUser(e.target.value)}
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="all">All users</option>
+          {users.map((u) => (
+            <option key={u} value={u}>{u}</option>
+          ))}
+        </select>
+        <div className="flex rounded-md border border-input overflow-hidden">
+          <button
+            onClick={() => setView("cards")}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === "cards" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setView("table")}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+              view === "table" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            Table
+          </button>
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -117,26 +171,92 @@ export default function ReadPage() {
         </Badge>
       </div>
 
-      {/* Items */}
+      {/* Empty state */}
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <div className="text-4xl mb-3">🐷</div>
             <p className="text-muted-foreground">
-              {search
-                ? "Nothing matches that search."
+              {search || filterUser !== "all"
+                ? "Nothing matches those filters."
                 : "Petryk's brain is empty. Send him some data!"}
             </p>
           </CardContent>
         </Card>
+      ) : view === "table" ? (
+        /* ── Table View ── */
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[80px]">ID</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Message / Filename</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((item) => {
+                    const id = String(item.id);
+                    const isFile = item.type === "file";
+                    return (
+                      <TableRow key={id}>
+                        <TableCell className="font-mono text-xs">
+                          {id.slice(0, 8)}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {item.email ? (
+                            <button
+                              className="text-pink-400 hover:underline"
+                              onClick={() => setFilterUser(String(item.email))}
+                            >
+                              {String(item.email)}
+                            </button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm max-w-[300px] truncate">
+                          {isFile
+                            ? String(item.filename || id)
+                            : String(item.message || "").slice(0, 80) || (
+                                <span className="text-muted-foreground italic">no message</span>
+                              )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {isFile ? "📎 file" : "💾 data"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => handleEdit(item)}>
+                              Edit
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDelete(id)}>
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
+        /* ── Card View ── */
         <div className="space-y-3">
           {filtered.map((item) => {
-            const id = item.id as string;
+            const id = String(item.id);
             const isExpanded = expanded === id;
             const isFile = item.type === "file";
 
-            // Get a preview of the item
             const previewKeys = Object.keys(item).filter(
               (k) => !["id", "type"].includes(k)
             );
@@ -166,10 +286,13 @@ export default function ReadPage() {
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-sm font-mono">
                         {isFile
-                          ? (item.filename as string) || id
-                          : (item.message as string)?.slice(0, 60) || id}
+                          ? String(item.filename || id)
+                          : String(item.message || "").slice(0, 60) || id}
                       </CardTitle>
                       <CardDescription className="text-xs truncate mt-0.5">
+                        {item.email && (
+                          <span className="text-pink-400 mr-2">{String(item.email)}</span>
+                        )}
                         {previewText}
                       </CardDescription>
                     </div>
@@ -210,20 +333,20 @@ export default function ReadPage() {
                     {/* File preview */}
                     {isFile && item.url && (
                       <div>
-                        {(item.content_type as string)?.startsWith("image/") ? (
+                        {String(item.content_type || "").startsWith("image/") ? (
                           <img
-                            src={item.url as string}
-                            alt={item.filename as string}
+                            src={String(item.url)}
+                            alt={String(item.filename)}
                             className="max-h-64 rounded-lg border"
                           />
                         ) : (
                           <a
-                            href={item.url as string}
+                            href={String(item.url)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-blue-400 hover:underline"
                           >
-                            Open file: {item.filename as string}
+                            Open file: {String(item.filename)}
                           </a>
                         )}
                       </div>
