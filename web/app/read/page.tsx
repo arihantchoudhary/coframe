@@ -187,18 +187,21 @@ export default function ReadPage() {
                     <div className="rounded-lg bg-muted p-4 overflow-auto">
                       <table className="w-full text-sm">
                         <tbody>
-                          {Object.entries(item).map(([key, value]) => (
-                            <tr key={key} className="border-b border-border/50 last:border-0">
-                              <td className="py-2 pr-4 font-medium text-muted-foreground align-top whitespace-nowrap w-[120px]">
-                                {key}
-                              </td>
-                              <td className="py-2 font-mono text-xs break-all">
-                                {typeof value === "object"
-                                  ? JSON.stringify(value, null, 2)
-                                  : String(value as string | number | boolean)}
-                              </td>
-                            </tr>
-                          ))}
+                          {Object.entries(item).map(([key, val]) => {
+                            const display = typeof val === "object"
+                              ? JSON.stringify(val, null, 2)
+                              : String(val ?? "");
+                            return (
+                              <tr key={key} className="border-b border-border/50 last:border-0">
+                                <td className="py-2 pr-4 font-medium text-muted-foreground align-top whitespace-nowrap w-[120px]">
+                                  {key}
+                                </td>
+                                <td className="py-2 font-mono text-xs break-all">
+                                  {display}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
