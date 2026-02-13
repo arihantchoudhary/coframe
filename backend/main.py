@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 import boto3
 import requests
+from openai import OpenAI
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,12 +31,45 @@ NOTIFY_EMAIL = "arihant@complete.city"
 
 EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
-def build_email_html(item_id: str, data: dict, email: str) -> str:
+
+def get_petryk_opinion(data: dict) -> str:
+    if not openai_client:
+        return "Petryk is thinking about this..."
+    try:
+        context = {k: v for k, v in data.items() if k not in ("id", "email", "petryk_opinion")}
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are Petryk, a curious and hyperactive bot who is learning about "
+                        "the world through data people send you. You currently know nothing — "
+                        "every piece of information is new and exciting to you. "
+                        "Give your brief opinion or analysis of the data you just received "
+                        "in 2-3 sentences. Be enthusiastic but insightful. Speak in first person."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"I just received this data:\n\n{json.dumps(context, indent=2, default=str)}",
+                },
+            ],
+            max_tokens=200,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception:
+        return "Petryk is thinking about this..."
+
+
+def build_email_html(item_id: str, data: dict, email: str, opinion: str = "") -> str:
     timestamp = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
     data_rows = ""
     for k, v in data.items():
-        if k in ("id", "email"):
+        if k in ("id", "email", "petryk_opinion"):
             continue
         data_rows += f"""
         <tr>
@@ -84,6 +118,14 @@ def build_email_html(item_id: str, data: dict, email: str) -> str:
               </tbody>
             </table>
 
+            <!-- Petryk's Opinion -->
+            {f'''
+            <div style="background: linear-gradient(135deg, #fdf2f8 0%, #fff7ed 100%); border: 1px solid #fbcfe8; border-radius: 8px; padding: 16px; margin-top: 24px;">
+              <p style="margin: 0 0 8px; font-size: 12px; color: #be185d; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">&#x1F437; Petryk&rsquo;s Take</p>
+              <p style="margin: 0; font-size: 14px; color: #831843; line-height: 1.5;">{opinion}</p>
+            </div>
+            ''' if opinion else ''}
+
             <!-- Submitted by -->
             <p style="margin: 24px 0 0; color: #9ca3af; font-size: 12px;">
               Submitted by <strong style="color: #6b7280;">{email}</strong>
@@ -123,7 +165,12 @@ def create_item(body: dict):
     item = {"id": item_id, **body, "email": email}
     table.put_item(Item=item)
 
-    html = build_email_html(item_id, item, email)
+    # Get Petryk's opinion on the data
+    opinion = get_petryk_opinion(item)
+    item["petryk_opinion"] = opinion
+    table.put_item(Item=item)
+
+    html = build_email_html(item_id, item, email, opinion=opinion)
     recipients = [email]
     if email != NOTIFY_EMAIL:
         recipients.append(NOTIFY_EMAIL)
