@@ -88,22 +88,28 @@ export default function DashboardPage() {
   // Fetch documents filtered by user's email
   useEffect(() => {
     if (!isSignedIn || !userEmail) return;
+    console.log("[Dashboard] Fetching data for user:", userEmail);
     (async () => {
       try {
         const res = await fetch(`${API_URL}/data`);
+        console.log("[Dashboard] GET /data response status:", res.status);
         if (res.ok) {
           const data = await res.json();
           const all: Item[] = Array.isArray(data) ? data : data.items ?? [];
+          console.log("[Dashboard] Total items from API:", all.length);
+          console.log("[Dashboard] All items:", JSON.stringify(all, null, 2));
           // Filter to only this user's entries
           const mine = all.filter(
             (item) =>
               String(item.email || "").toLowerCase() ===
               userEmail.toLowerCase()
           );
+          console.log("[Dashboard] Filtered to user's items:", mine.length);
+          console.log("[Dashboard] User's items:", JSON.stringify(mine, null, 2));
           setDocuments(mine);
         }
-      } catch {
-        // silently fail
+      } catch (err) {
+        console.error("[Dashboard] Error fetching data:", err);
       } finally {
         setLoading(false);
       }
@@ -196,8 +202,14 @@ export default function DashboardPage() {
     setInput("");
     setThinking(true);
 
+    console.log("[Chat] User query:", text);
+    console.log("[Chat] Documents available:", documents.length);
+
     try {
       const context = buildContext();
+      console.log("[Chat] Built context length:", context.length);
+      console.log("[Chat] Context preview:", context.slice(0, 500));
+
       const systemPrompt = `You are Petryk, a helpful AI assistant. The user is ${user?.firstName || "a user"} (${userEmail}). You have access to the following documents they stored in the database:\n\n${context}\n\nAnswer questions about these documents helpfully and concisely. If asked about something not in the documents, say so honestly.`;
 
       const chatHistory = [...messages, userMsg].map((m) => ({
@@ -205,27 +217,43 @@ export default function DashboardPage() {
         content: m.content,
       }));
 
+      console.log("[Chat] Sending to API:", `${API_URL}/chat`);
+      console.log("[Chat] Payload:", JSON.stringify({ messages: chatHistory, system: systemPrompt }, null, 2));
+
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: chatHistory, system: systemPrompt }),
       });
 
+      console.log("[Chat] API response status:", res.status);
+
       if (res.ok) {
         const data = await res.json();
+        console.log("[Chat] API response data:", JSON.stringify(data, null, 2));
         const reply =
           data.response || data.message || data.content || "Sorry, I couldn't process that.";
+        console.log("[Chat] Reply to show:", reply);
         setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
       } else {
+        const errText = await res.text();
+        console.warn("[Chat] API failed, status:", res.status, "body:", errText);
+        console.log("[Chat] Falling back to local reply");
+        const fallback = generateLocalReply(text);
+        console.log("[Chat] Local fallback reply:", fallback);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: generateLocalReply(text) },
+          { role: "assistant", content: fallback },
         ]);
       }
-    } catch {
+    } catch (err) {
+      console.error("[Chat] Error:", err);
+      console.log("[Chat] Falling back to local reply");
+      const fallback = generateLocalReply(text);
+      console.log("[Chat] Local fallback reply:", fallback);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: generateLocalReply(text) },
+        { role: "assistant", content: fallback },
       ]);
     } finally {
       setThinking(false);
@@ -234,32 +262,54 @@ export default function DashboardPage() {
 
   function generateLocalReply(query: string): string {
     const q = query.toLowerCase();
+    console.log("[LocalReply] Query:", q);
+    console.log("[LocalReply] Documents to search:", documents.length);
 
+    // If asking about what they have / uploaded / how many — just list everything
     if (
-      q.includes("how many") &&
-      (q.includes("document") || q.includes("item") || q.includes("record"))
+      q.includes("how many") ||
+      q.includes("what") ||
+      q.includes("uploaded") ||
+      q.includes("list") ||
+      q.includes("show") ||
+      q.includes("everything")
     ) {
-      return `You have ${documents.length} document${documents.length !== 1 ? "s" : ""} in the database.`;
+      console.log("[LocalReply] Listing all documents");
+      if (documents.length === 0) {
+        return "You don't have any documents in the database yet.";
+      }
+      const summaries = documents.map((doc, i) => {
+        const parts: string[] = [`${i + 1}.`];
+        if (doc.message) parts.push(`"${doc.message}"`);
+        if (doc.type === "file" && doc.filename) parts.push(`File: ${doc.filename}`);
+        const ai = getAiFields(doc);
+        if (ai.length > 0) parts.push(`\n   Petryk's take: ${ai[0][1]}`);
+        return parts.join(" ");
+      });
+      return `You have ${documents.length} item${documents.length !== 1 ? "s" : ""} in the database:\n\n${summaries.join("\n\n")}`;
     }
 
+    // Search documents for matching content
     const matches = documents.filter((doc) => {
       const searchable = JSON.stringify(doc).toLowerCase();
       const words = q.split(/\s+/).filter((w) => w.length > 2);
       return words.some((word) => searchable.includes(word));
     });
+    console.log("[LocalReply] Keyword matches:", matches.length);
 
     if (matches.length > 0) {
-      const summaries = matches.slice(0, 5).map((doc) => {
-        const parts: string[] = [];
+      const summaries = matches.slice(0, 10).map((doc, i) => {
+        const parts: string[] = [`${i + 1}.`];
         if (doc.message) parts.push(`"${doc.message}"`);
+        if (doc.type === "file" && doc.filename) parts.push(`File: ${doc.filename}`);
         const ai = getAiFields(doc);
-        if (ai.length > 0) parts.push(`Petryk's take: ${ai[0][1]}`);
-        return parts.join(" — ") || `Document ${doc.id}`;
+        if (ai.length > 0) parts.push(`\n   Petryk's take: ${ai[0][1]}`);
+        return parts.join(" ");
       });
       return `I found ${matches.length} matching document${matches.length !== 1 ? "s" : ""}:\n\n${summaries.join("\n\n")}`;
     }
 
-    return `I searched through your ${documents.length} documents but couldn't find anything matching "${query}". Try asking about specific content or the number of documents.`;
+    return `I searched through your ${documents.length} documents but couldn't find anything matching "${query}". Try asking "what have I uploaded?" or about specific content.`;
   }
 
   // ── Render ──
