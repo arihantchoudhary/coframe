@@ -50,7 +50,12 @@ def describe_image_with_gemini(s3_key: str) -> str:
         image = Image.open(io.BytesIO(image_bytes))
         response = gemini_client.models.generate_content(
             model="gemini-2.5-flash",
-            contents=["Describe this image in detail in 50 characters", image],
+            contents=[
+                "Describe this image in rich detail. Include what objects, people, colors, "
+                "textures, actions, and setting you see. Be specific and descriptive, not "
+                "surface-level. 2-3 sentences.",
+                image,
+            ],
         )
         return response.text.strip()
     except Exception:

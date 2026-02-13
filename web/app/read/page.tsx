@@ -41,13 +41,28 @@ export default function ReadPage() {
 
   async function loadAll() {
     setLoadingAll(true);
+    console.log("[READ] Fetching all items from:", `${API_URL}/data`);
     try {
       const res = await fetch(`${API_URL}/data`);
+      console.log("[READ] Response status:", res.status);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      console.log("[READ] Loaded", data.length, "items");
+      data.forEach((item: Item, i: number) => {
+        console.log(`[READ] Item ${i}:`, {
+          id: item.id,
+          type: item.type,
+          email: item.email,
+          has_petryk_opinion: !!item.petryk_opinion,
+          has_image_description: !!item.image_description,
+          filename: item.filename,
+        });
+        if (item.image_description) console.log(`[READ]   image_description: "${item.image_description}"`);
+        if (item.petryk_opinion) console.log(`[READ]   petryk_opinion: "${item.petryk_opinion}"`);
+      });
       setAllItems(data);
-    } catch {
-      // silent
+    } catch (e) {
+      console.error("[READ] Failed to load items:", e);
     } finally {
       setLoadingAll(false);
     }

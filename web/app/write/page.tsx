@@ -130,40 +130,66 @@ function WritePageInner() {
   }
 
   async function uploadFile(af: AttachedFile): Promise<{ file_id: string; url: string; filename: string }> {
+    console.log("[UPLOAD] Starting upload for:", af.file.name, "type:", af.file.type, "size:", af.file.size);
     setFiles((prev) =>
       prev.map((f) => (f.localId === af.localId ? { ...f, status: "uploading", progress: 20 } : f))
     );
 
+    console.log("[UPLOAD] Requesting presigned URL from:", `${API_URL}/upload/presign`);
+    const presignBody = { filename: af.file.name, content_type: af.file.type || "application/octet-stream" };
+    console.log("[UPLOAD] Presign request body:", presignBody);
     const presignRes = await fetch(`${API_URL}/upload/presign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename: af.file.name, content_type: af.file.type || "application/octet-stream" }),
+      body: JSON.stringify(presignBody),
     });
-    if (!presignRes.ok) throw new Error("Failed to get upload URL");
+    console.log("[UPLOAD] Presign response status:", presignRes.status);
+    if (!presignRes.ok) {
+      const errText = await presignRes.text().catch(() => "");
+      console.error("[UPLOAD] Presign FAILED:", presignRes.status, errText);
+      throw new Error("Failed to get upload URL");
+    }
     const { upload_url, file_id, key } = await presignRes.json();
+    console.log("[UPLOAD] Got presigned URL. file_id:", file_id, "key:", key);
 
     setFiles((prev) =>
       prev.map((f) => (f.localId === af.localId ? { ...f, progress: 50 } : f))
     );
 
+    console.log("[UPLOAD] Uploading to S3...");
     const uploadRes = await fetch(upload_url, {
       method: "PUT",
       headers: { "Content-Type": af.file.type || "application/octet-stream" },
       body: af.file,
     });
-    if (!uploadRes.ok) throw new Error("Upload failed");
+    console.log("[UPLOAD] S3 upload response status:", uploadRes.status);
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text().catch(() => "");
+      console.error("[UPLOAD] S3 upload FAILED:", uploadRes.status, errText);
+      throw new Error("Upload failed");
+    }
 
     setFiles((prev) =>
       prev.map((f) => (f.localId === af.localId ? { ...f, progress: 80 } : f))
     );
 
+    console.log("[UPLOAD] Calling /upload/complete...");
+    const completeBody = { file_id, filename: af.file.name, content_type: af.file.type, key, size: af.file.size };
+    console.log("[UPLOAD] Complete request body:", completeBody);
     const completeRes = await fetch(`${API_URL}/upload/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ file_id, filename: af.file.name, content_type: af.file.type, key, size: af.file.size }),
+      body: JSON.stringify(completeBody),
     });
-    if (!completeRes.ok) throw new Error("Failed to save file metadata");
+    console.log("[UPLOAD] Complete response status:", completeRes.status);
+    if (!completeRes.ok) {
+      const errText = await completeRes.text().catch(() => "");
+      console.error("[UPLOAD] Complete FAILED:", completeRes.status, errText);
+      throw new Error("Failed to save file metadata");
+    }
     const fileResult = await completeRes.json();
+    console.log("[UPLOAD] Complete result:", fileResult);
+    console.log("[UPLOAD] image_description:", fileResult.image_description || "(none)");
 
     setFiles((prev) =>
       prev.map((f) => (f.localId === af.localId ? { ...f, status: "done", progress: 100, result: fileResult } : f))
@@ -182,10 +208,12 @@ function WritePageInner() {
     setLoading(true);
     try {
       // Upload all files first
+      console.log("[SUBMIT] Starting submit. Files to upload:", files.filter((f) => f.status !== "done").length);
       const uploadedFiles = [];
       for (const af of files.filter((f) => f.status !== "done")) {
         try {
           const result = await uploadFile(af);
+          console.log("[SUBMIT] File uploaded:", result);
           uploadedFiles.push(result);
         } catch (e: unknown) {
           setFiles((prev) =>
@@ -216,18 +244,25 @@ function WritePageInner() {
 
       const url = editingId ? `${API_URL}/data/${editingId}` : `${API_URL}/data`;
       const method = editingId ? "PUT" : "POST";
+      console.log("[SUBMIT] Sending to:", method, url);
+      console.log("[SUBMIT] Body:", JSON.stringify(body, null, 2));
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      console.log("[SUBMIT] Response status:", res.status);
       if (!res.ok) {
         const err = await res.json().catch(() => null);
+        console.error("[SUBMIT] FAILED:", res.status, err);
         throw new Error(err?.detail || `HTTP ${res.status}`);
       }
       const data = await res.json();
+      console.log("[SUBMIT] Success! Response:", data);
+      console.log("[SUBMIT] petryk_opinion:", data.petryk_opinion || "(none)");
       setResult(data);
     } catch (e: unknown) {
+      console.error("[SUBMIT] Error:", e);
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
