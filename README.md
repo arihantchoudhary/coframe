@@ -1,4 +1,4 @@
-# Coframe
+# Same Data Writer
 
 Full-stack data platform with a FastAPI backend, DynamoDB storage, Mailgun email integration, and multi-client frontends.
 
