@@ -64,6 +64,12 @@ def create_item(body: dict):
     return item
 
 
+@app.get("/data")
+def list_items():
+    response = table.scan()
+    return response.get("Items", [])
+
+
 @app.get("/data/{item_id}")
 def get_item(item_id: str):
     response = table.get_item(Key={"id": item_id})
