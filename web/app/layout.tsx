@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Petryk Pyatochkin — Your AI Agent",
-  description: "Send data, files, and documents to Petryk. He remembers everything.",
+  description: "A self-improving bot that knows nothing — yet. Feed him anything and he'll learn to understand you.",
 };
 
 export default function RootLayout({
@@ -44,12 +44,6 @@ export default function RootLayout({
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Petryk&apos;s Brain
-            </Link>
-            <Link
-              href="/upload"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Upload
             </Link>
           </div>
         </nav>

@@ -256,12 +256,12 @@ function WritePageInner() {
     <div className="max-w-4xl mx-auto p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          {editingId ? "✏️ Update Memory" : "💬 Talk to Petryk"}
+          {editingId ? "✏️ Update Memory" : "💬 Feed Petryk"}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           {editingId
             ? `Editing item ${editingId.slice(0, 8)}... — change anything and add more files.`
-            : "Send anything — text, key-value data, images, videos, audio, documents. Petryk remembers it all."}
+            : "Text, files, images, videos, documents — give Petryk anything. He knows nothing right now, but he's learning."}
         </p>
       </div>
 

@@ -38,14 +38,15 @@ export default function Home() {
         </h1>
 
         <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed">
-          Send me anything — data, files, images, videos, documents.
-          I&apos;ll remember it all. I&apos;ll even send you an email to confirm.
+          I&apos;m a self-improving bot that currently knows nothing.
+          Give me any information — text, files, images, documents — and I&apos;ll
+          learn to understand you as a user, in my own way.
         </p>
 
         <p className="mt-4 text-sm text-muted-foreground/70 max-w-lg leading-relaxed italic">
           Why Petryk? Named after the hyperactive kid from the classic Ukrainian cartoon
           that every Ukrainian child grows up with — restless, enthusiastic, never stops
-          collecting and remembering things. That energy felt right.
+          collecting and learning. That energy felt right.
         </p>
         <p className="mt-2 text-xs text-muted-foreground/50">
           Built by <span className="text-muted-foreground/70 font-medium">Arihant Choudhary</span>
@@ -72,18 +73,18 @@ export default function Home() {
       {/* Features */}
       <section className="px-6 pb-24">
         <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <Card className="bg-card/50 backdrop-blur">
               <CardHeader>
                 <div className="text-3xl mb-2">💬</div>
-                <CardTitle>Send Info</CardTitle>
+                <CardTitle>Feed Petryk</CardTitle>
                 <CardDescription>
-                  Text, key-value pairs, JSON — tell Petryk anything and
-                  he&apos;ll store it. Attach files too.
+                  Text, files, images, videos, documents — give Petryk anything.
+                  Drag & drop or type it out. He&apos;ll infer the rest.
                 </CardDescription>
                 <Link href="/write">
                   <Button variant="ghost" className="mt-3 px-0 text-pink-400 hover:text-pink-300">
-                    Write to Petryk &rarr;
+                    Send something &rarr;
                   </Button>
                 </Link>
               </CardHeader>
@@ -94,28 +95,12 @@ export default function Home() {
                 <div className="text-3xl mb-2">🧠</div>
                 <CardTitle>Petryk&apos;s Brain</CardTitle>
                 <CardDescription>
-                  Everything Petryk knows, in one place. Browse, edit, update,
+                  Everything Petryk knows so far. Browse, edit, update,
                   or delete anything in his memory.
                 </CardDescription>
                 <Link href="/read">
                   <Button variant="ghost" className="mt-3 px-0 text-pink-400 hover:text-pink-300">
                     Open brain &rarr;
-                  </Button>
-                </Link>
-              </CardHeader>
-            </Card>
-
-            <Card className="bg-card/50 backdrop-blur">
-              <CardHeader>
-                <div className="text-3xl mb-2">📦</div>
-                <CardTitle>Upload Files</CardTitle>
-                <CardDescription>
-                  Drag & drop images, videos, audio, PDFs, presentations,
-                  documents — Petryk takes it all.
-                </CardDescription>
-                <Link href="/upload">
-                  <Button variant="ghost" className="mt-3 px-0 text-pink-400 hover:text-pink-300">
-                    Upload now &rarr;
                   </Button>
                 </Link>
               </CardHeader>
