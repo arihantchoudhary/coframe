@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { Suspense, useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,14 @@ type AttachedFile = {
 };
 
 export default function WritePage() {
+  return (
+    <Suspense fallback={<div className="max-w-4xl mx-auto p-8">Loading...</div>}>
+      <WritePageInner />
+    </Suspense>
+  );
+}
+
+function WritePageInner() {
   const searchParams = useSearchParams();
   const [message, setMessage] = useState("");
   const [extraFields, setExtraFields] = useState<{ key: string; value: string }[]>([]);
