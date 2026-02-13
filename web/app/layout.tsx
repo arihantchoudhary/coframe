@@ -1,4 +1,11 @@
 import type { Metadata } from "next";
+import {
+  ClerkProvider,
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -24,31 +31,53 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
-        <nav className="border-b border-border px-6 py-4">
-          <div className="max-w-6xl mx-auto flex items-center gap-6">
-            <Link href="/" className="text-lg font-bold flex items-center gap-2">
-              <span className="text-2xl">🐷</span> Petryk
-            </Link>
-            <Link
-              href="/write"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Write to Petryk
-            </Link>
-            <Link
-              href="/read"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Petryk&apos;s Brain
-            </Link>
-          </div>
-        </nav>
-        {children}
-      </body>
-    </html>
+    <ClerkProvider appearance={{ variables: { colorPrimary: "#ec4899" } }}>
+      <html lang="en" className="dark">
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        >
+          <nav className="border-b border-border px-6 py-4">
+            <div className="max-w-6xl mx-auto flex items-center gap-6">
+              <Link href="/" className="text-lg font-bold flex items-center gap-2">
+                <span className="text-2xl">🐷</span> Petryk
+              </Link>
+              <Link
+                href="/write"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Write to Petryk
+              </Link>
+              <Link
+                href="/read"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Petryk&apos;s Brain
+              </Link>
+              <SignedIn>
+                <Link
+                  href="/dashboard"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Dashboard
+                </Link>
+              </SignedIn>
+              <div className="ml-auto flex items-center gap-3">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="bg-gradient-to-r from-pink-500 to-orange-400 text-white rounded-full font-medium text-sm h-9 px-5 cursor-pointer hover:opacity-90 transition-opacity">
+                      Sign In
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton />
+                </SignedIn>
+              </div>
+            </div>
+          </nav>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
