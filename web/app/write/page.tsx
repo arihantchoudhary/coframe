@@ -29,7 +29,9 @@ export default function WritePage() {
 
   function validateEmail(value: string) {
     setEmail(value);
-    if (value && !EMAIL_RE.test(value)) {
+    if (!value) {
+      setEmailError("Email is required.");
+    } else if (!EMAIL_RE.test(value)) {
       setEmailError("Please enter a valid email address.");
     } else {
       setEmailError("");
@@ -40,7 +42,11 @@ export default function WritePage() {
     setError("");
     setResult(null);
 
-    if (email && !EMAIL_RE.test(email)) {
+    if (!email) {
+      setEmailError("Email is required.");
+      return;
+    }
+    if (!EMAIL_RE.test(email)) {
       setEmailError("Please enter a valid email address.");
       return;
     }
@@ -48,7 +54,7 @@ export default function WritePage() {
     setLoading(true);
     try {
       const body = JSON.parse(jsonInput);
-      if (email) body.email = email;
+      body.email = email;
       const res = await fetch(`${API_URL}/data`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,7 +78,7 @@ export default function WritePage() {
       <div>
         <h1 className="text-2xl font-bold">Write Data</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Push arbitrary JSON into the coframe-data table.
+          Push data into the database. A confirmation email will be sent.
         </p>
       </div>
 
@@ -80,13 +86,15 @@ export default function WritePage() {
         <CardHeader>
           <CardTitle>New Item</CardTitle>
           <CardDescription>
-            Enter JSON below. An <code className="text-xs">id</code> will be
-            auto-generated. Add your email to receive a confirmation.
+            Enter your email and JSON data below. An{" "}
+            <code className="text-xs">id</code> will be auto-generated.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email (optional)</label>
+            <label className="text-sm font-medium">
+              Email <span className="text-destructive">*</span>
+            </label>
             <Input
               type="email"
               value={email}
@@ -106,7 +114,10 @@ export default function WritePage() {
               placeholder='{"key": "value"}'
             />
           </div>
-          <Button onClick={handlePush} disabled={loading || !!emailError}>
+          <Button
+            onClick={handlePush}
+            disabled={loading || !!emailError || !email}
+          >
             {loading ? "Pushing..." : "Push Data"}
           </Button>
         </CardContent>
@@ -129,11 +140,9 @@ export default function WritePage() {
                 {(result as Record<string, unknown>).id as string}
               </Badge>
             </CardTitle>
-            {email && (
-              <CardDescription>
-                Confirmation email sent to {email}
-              </CardDescription>
-            )}
+            <CardDescription>
+              Confirmation email sent to {email}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <pre className="bg-muted rounded-lg p-4 text-sm font-mono overflow-auto">
