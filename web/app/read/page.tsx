@@ -17,7 +17,8 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "https://yh9fp9463n.us-east-1.awsapprunner.com";
 
-type Item = Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Item = Record<string, any>;
 
 export default function ReadPage() {
   const router = useRouter();
