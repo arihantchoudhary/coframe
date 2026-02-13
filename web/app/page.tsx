@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,15 @@ export default function Home() {
     <div className="min-h-[calc(100vh-65px)] flex flex-col">
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24">
-        <div className="text-8xl mb-6">🐷</div>
+        <div className="mb-6">
+          <Image
+            src="/petryk.jpg"
+            alt="Petryk Pyatochkin"
+            width={160}
+            height={160}
+            className="rounded-full border-4 border-pink-400/30 shadow-lg"
+          />
+        </div>
 
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium mb-8">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -113,6 +122,17 @@ export default function Home() {
             </Card>
           </div>
         </div>
+      </section>
+
+      {/* Petryk image */}
+      <section className="flex justify-center pb-12">
+        <Image
+          src="/petryk.jpg"
+          alt="Petryk Pyatochkin from the Ukrainian cartoon"
+          width={280}
+          height={280}
+          className="rounded-2xl border border-border shadow-md opacity-80"
+        />
       </section>
 
       {/* Footer */}

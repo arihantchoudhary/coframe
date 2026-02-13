@@ -195,7 +195,7 @@ export default function ReadPage() {
                               <td className="py-2 font-mono text-xs break-all">
                                 {typeof value === "object"
                                   ? JSON.stringify(value, null, 2)
-                                  : String(value)}
+                                  : String(value as string | number | boolean)}
                               </td>
                             </tr>
                           ))}
