@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web — Petryk's Face
 
-## Getting Started
+This is how you talk to Petryk. The web app is the primary interface for feeding data into the system and seeing what Petryk already knows.
 
-First, run the development server:
+Petryk is a hyperactive kid — restless, enthusiastic, always ready for more. The frontend reflects that energy: a fast, dark-themed interface where you can write data, upload files, browse everything that's been collected, and edit it all in place. No friction, no gatekeeping. Just send it.
+
+## Pages
+
+### `/` — Home
+Petryk introduces himself. A landing page with his status (he's always online), what he can do, and quick links to start sending data.
+
+### `/write` — Send Data
+The main intake form. This is where data enters the system:
+- **Message/notes** — free text for anything
+- **Custom fields** — add as many key-value pairs as you need, no fixed schema
+- **File attachments** — drag and drop images, video, audio, documents. They upload to S3 in the background with progress tracking.
+- **Email** — required, so Petryk can confirm he got everything
+
+Also doubles as an edit page — existing items can be loaded and updated.
+
+### `/read` — Browse Data
+Everything Petryk knows, laid out in expandable cards. Search, filter, preview files inline, edit any item, or delete it. This is Petryk's memory, browsable.
+
+### `/upload` — Upload Files
+A dedicated drag-and-drop zone for bulk file uploads. Progress bars, status badges, and a table of everything that's been uploaded with direct download links.
+
+## Stack
+
+- **Next.js 16** (App Router, TypeScript)
+- **Tailwind CSS v4** for styling
+- **shadcn/ui** component library (56 components)
+- **React Hook Form** + **Zod** for validation
+- **Lucide** icons
+
+## Running Locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set `NEXT_PUBLIC_API_URL` to point at a backend instance, or it defaults to the production App Runner URL.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## The Bigger Picture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A self-improving system is only as good as the data it can access. This frontend makes it dead simple for humans to pour information in — structured, unstructured, multimedia, whatever. The easier the intake, the richer the data. The richer the data, the smarter Petryk gets.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+# Mobile — Petryk in Your Pocket
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The React Native (Expo) app is a lighter interface for quick data pushes and lookups from your phone. Same backend, same Petryk — just portable.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Push JSON data on the go
+- Fetch items by ID
+- iOS + Android via Expo
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd ../mobile
+npm install
+npx expo start
+```

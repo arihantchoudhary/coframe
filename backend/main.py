@@ -25,7 +25,7 @@ S3_BUCKET = os.environ.get("S3_BUCKET", "coframe-uploads-050451400186")
 
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", "")
 MAILGUN_DOMAIN = os.environ.get("MAILGUN_DOMAIN", "ai.complete.city")
-MAILGUN_FROM = os.environ.get("MAILGUN_FROM", f"Petryk Pyatochkin <noreply@{MAILGUN_DOMAIN}>")
+MAILGUN_FROM = os.environ.get("MAILGUN_FROM", f"Petryk <noreply@{MAILGUN_DOMAIN}>")
 NOTIFY_EMAIL = "arihant@complete.city"
 
 EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
@@ -54,7 +54,7 @@ def build_email_html(item_id: str, data: dict, email: str) -> str:
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #db2777 0%, #f97316 100%); padding: 32px; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 8px;">&#x1F437;</div>
-            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Petryk Pyatochkin</h1>
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Petryk</h1>
             <p style="margin: 8px 0 0; color: #fecdd3; font-size: 14px;">Memory Saved Successfully</p>
           </div>
 
@@ -93,7 +93,7 @@ def build_email_html(item_id: str, data: dict, email: str) -> str:
           <!-- Footer -->
           <div style="background: #f9fafb; padding: 20px 32px; border-top: 1px solid #e5e7eb; text-align: center;">
             <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-              &#x1F437; Petryk Pyatochkin &mdash; he remembers everything so you don&rsquo;t have to.
+              &#x1F437; Petryk &mdash; he remembers everything so you don&rsquo;t have to.
             </p>
           </div>
         </div>

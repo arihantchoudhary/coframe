@@ -18,7 +18,7 @@ export default function Home() {
         <div className="mb-6">
           <Image
             src="/petryk.jpg"
-            alt="Petryk Pyatochkin"
+            alt="Petryk"
             width={160}
             height={160}
             className="rounded-full border-4 border-pink-400/30 shadow-lg"
@@ -33,7 +33,7 @@ export default function Home() {
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight max-w-4xl leading-[1.1]">
           Hey, I&apos;m{" "}
           <span className="bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">
-            Petryk Pyatochkin
+            Petryk
           </span>
         </h1>
 
@@ -112,7 +112,7 @@ export default function Home() {
       <section className="flex justify-center pb-12">
         <Image
           src="/petryk.jpg"
-          alt="Petryk Pyatochkin from the Ukrainian cartoon"
+          alt="Petryk from the Ukrainian cartoon"
           width={280}
           height={280}
           className="rounded-2xl border border-border shadow-md opacity-80"
@@ -122,7 +122,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border px-6 py-6 text-center">
         <p className="text-xs text-muted-foreground">
-          🐷 Petryk Pyatochkin — he remembers everything so you don&apos;t have to.
+          🐷 Petryk — he remembers everything so you don&apos;t have to.
           Built by Arihant Choudhary.
         </p>
       </footer>

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Petryk Pyatochkin — Your AI Agent",
+  title: "Petryk — Your AI Agent",
   description: "A self-improving bot that knows nothing — yet. Feed him anything and he'll learn to understand you.",
 };
 

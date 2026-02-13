@@ -1,121 +1,61 @@
-# Petryk Pyatochkin
+# Petryk
 
-He remembers everything so you don't have to. Full-stack data platform with a FastAPI backend, DynamoDB storage, Mailgun email integration, and multi-client frontends.
+A hyperactive kid who never stops listening, never forgets, and always writes back.
 
-## Architecture
+Petryk is the foundation of a self-improving system. Right now, he's a universal data intake — send him anything (text, files, images, video, documents) and he'll remember it. No fixed schema, no restrictions on what you can feed him. He stores everything, confirms receipt, and keeps it all accessible. Today he remembers. Tomorrow he learns.
 
-| Layer | Tech | Location |
-|-------|------|----------|
-| Database | AWS DynamoDB (`coframe-data`) | us-east-1 |
-| Backend API | FastAPI on AWS App Runner | `backend/` |
-| Web App | Next.js + shadcn/ui | `web/` |
-| Mobile App | React Native (Expo) | `mobile/` |
-| CI/CD | GitHub Actions → ECR → App Runner | `.github/workflows/` |
-| Infra | Terraform | `infra/` |
+## Write to Petryk's Brain
 
-## Public API
+**API URL:** `https://yh9fp9463n.us-east-1.awsapprunner.com`
 
-**Base URL:** `https://yh9fp9463n.us-east-1.awsapprunner.com`
-
-### `POST /data`
-
-Create a new item. Optionally include an `email` field to receive a confirmation email.
+Send anything:
 
 ```bash
 curl -X POST https://yh9fp9463n.us-east-1.awsapprunner.com/data \
   -H "Content-Type: application/json" \
-  -d '{"name": "example", "value": 42, "email": "you@example.com"}'
+  -d '{"email": "you@example.com", "name": "example", "value": 42, "anything": "you want"}'
 ```
 
-**Response:**
-```json
-{
-  "id": "generated-uuid",
-  "name": "example",
-  "value": 42,
-  "email": "you@example.com"
-}
-```
+Petryk accepts any JSON fields. The only requirement is `email` so he can confirm he got it. He'll store everything and send you a confirmation.
 
-### `GET /data/{id}`
+## The System
 
-Retrieve an item by ID.
+| Layer | What It Is | Location |
+|-------|-----------|----------|
+| **Brain** | FastAPI on AWS App Runner — ingests data, stores it, sends confirmations | [`backend/`](backend/) |
+| **Face** | Next.js + shadcn/ui — write data, browse memories, upload files | [`web/`](web/) |
+| **Pocket** | React Native (Expo) — quick data pushes from your phone | [`mobile/`](mobile/) |
+| **Foundations** | Terraform — DynamoDB for data, S3 for files, all serverless | [`infra/`](infra/) |
+| **Reflexes** | GitHub Actions — auto-deploy on push to main | [`.github/workflows/`](.github/workflows/) |
 
-```bash
-curl https://yh9fp9463n.us-east-1.awsapprunner.com/data/some-uuid
-```
+## API
 
-**Response:**
-```json
-{
-  "id": "some-uuid",
-  "name": "example",
-  "value": 42
-}
-```
-
-### `PUT /data/{id}`
-
-Update an existing item by ID.
-
-```bash
-curl -X PUT https://yh9fp9463n.us-east-1.awsapprunner.com/data/some-uuid \
-  -H "Content-Type: application/json" \
-  -d '{"name": "updated", "value": 99}'
-```
-
-**Response:**
-```json
-{
-  "id": "some-uuid",
-  "name": "updated",
-  "value": 99
-}
-```
-
-### `DELETE /data/{id}`
-
-Delete an item by ID.
-
-```bash
-curl -X DELETE https://yh9fp9463n.us-east-1.awsapprunner.com/data/some-uuid
-```
-
-**Response:**
-```json
-{
-  "deleted": "some-uuid"
-}
-```
+| Method | Endpoint | What It Does |
+|--------|----------|--------------|
+| `POST` | `/data` | Send Petryk new data |
+| `GET` | `/data` | See everything he knows |
+| `GET` | `/data/{id}` | Look up a specific memory |
+| `PUT` | `/data/{id}` | Correct something |
+| `DELETE` | `/data/{id}` | Tell him to forget |
+| `POST` | `/upload/presign` | Get a signed URL to upload a file |
+| `POST` | `/upload/complete` | Confirm a file upload finished |
+| `GET` | `/files` | See all files he's holding |
 
 ## Running Locally
 
-### Backend
-
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+# Backend
+cd backend && pip install -r requirements.txt && uvicorn main:app --reload
 
-### Web App
+# Web
+cd web && npm install && npm run dev
 
-```bash
-cd web
-npm install
-npm run dev
-```
-
-### Mobile App
-
-```bash
-cd mobile
-npm install
-npx expo start
+# Mobile
+cd mobile && npm install && npx expo start
 ```
 
 ## Deployment
 
-- **Backend:** Pushes to `backend/` on `main` trigger GitHub Actions to build and push to ECR. App Runner auto-deploys.
+- **Backend:** Push to `backend/` on `main` triggers GitHub Actions → Docker → ECR → App Runner auto-deploys.
 - **Web:** Connect `web/` to Vercel. Set `NEXT_PUBLIC_API_URL` env var.
 - **Infra:** `cd infra && terraform init && terraform apply`
