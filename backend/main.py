@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import re
@@ -7,6 +8,8 @@ from datetime import datetime, timezone
 import boto3
 import requests
 from openai import OpenAI
+from google import genai
+from PIL import Image
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -33,6 +36,25 @@ EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+
+
+def describe_image_with_gemini(s3_key: str) -> str:
+    if not gemini_client:
+        return ""
+    try:
+        obj = s3.get_object(Bucket=S3_BUCKET, Key=s3_key)
+        image_bytes = obj["Body"].read()
+        image = Image.open(io.BytesIO(image_bytes))
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=["Describe this image in detail in 50 characters", image],
+        )
+        return response.text.strip()
+    except Exception:
+        return ""
 
 
 def get_petryk_opinion(data: dict) -> str:
@@ -262,6 +284,13 @@ def complete_upload(body: dict):
         "url": file_url,
         "uploaded_at": datetime.now(timezone.utc).isoformat(),
     }
+
+    # If it's an image, get Gemini to describe it
+    if content_type.startswith("image/"):
+        description = describe_image_with_gemini(key)
+        if description:
+            item["image_description"] = description
+
     table.put_item(Item=item)
 
     return item
