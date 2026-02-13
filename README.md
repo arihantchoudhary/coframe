@@ -8,15 +8,71 @@ Petryk is the foundation of a self-improving system. Right now, he's a universal
 
 **API URL:** `https://yh9fp9463n.us-east-1.awsapprunner.com`
 
-Send anything:
+Petryk accepts any JSON fields. The only requirement is `email` so he can confirm he got it. Send whatever else you want — he'll store everything and send you a confirmation.
+
+### JSON Format
+
+```json
+{
+  "email": "you@example.com",
+  "key": "value",
+  "any_field": "anything you want",
+  "nested": { "works": "too" },
+  "numbers": 42,
+  "lists": ["also", "fine"]
+}
+```
+
+`email` is required. Everything else is up to you — add as many fields as you need, any types, any structure.
+
+### curl
 
 ```bash
 curl -X POST https://yh9fp9463n.us-east-1.awsapprunner.com/data \
   -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com", "name": "example", "value": 42, "anything": "you want"}'
+  -d '{
+    "email": "you@example.com",
+    "name": "example",
+    "value": 42,
+    "anything": "you want"
+  }'
 ```
 
-Petryk accepts any JSON fields. The only requirement is `email` so he can confirm he got it. He'll store everything and send you a confirmation.
+### Python
+
+```python
+import requests
+
+response = requests.post(
+    "https://yh9fp9463n.us-east-1.awsapprunner.com/data",
+    json={
+        "email": "you@example.com",
+        "name": "example",
+        "value": 42,
+        "anything": "you want",
+    },
+)
+
+print(response.json())
+# {'id': 'generated-uuid', 'email': 'you@example.com', 'name': 'example', 'value': 42, 'anything': 'you want'}
+```
+
+### JavaScript
+
+```javascript
+const response = await fetch("https://yh9fp9463n.us-east-1.awsapprunner.com/data", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: "you@example.com",
+    name: "example",
+    value: 42,
+    anything: "you want",
+  }),
+});
+
+const data = await response.json();
+```
 
 ## The System
 
