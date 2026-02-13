@@ -31,7 +31,7 @@ export default function RootLayout({
         <nav className="border-b border-border px-6 py-4">
           <div className="max-w-4xl mx-auto flex items-center gap-6">
             <Link href="/" className="text-lg font-bold">
-              Coframe
+              Same Data Writer
             </Link>
             <Link
               href="/write"
@@ -44,6 +44,12 @@ export default function RootLayout({
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Read / Update / Delete
+            </Link>
+            <Link
+              href="/upload"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Upload
             </Link>
           </div>
         </nav>

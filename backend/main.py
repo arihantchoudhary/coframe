@@ -20,6 +20,8 @@ app.add_middleware(
 
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 table = dynamodb.Table("coframe-data")
+s3 = boto3.client("s3", region_name="us-east-1")
+S3_BUCKET = os.environ.get("S3_BUCKET", "coframe-uploads-050451400186")
 
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", "")
 MAILGUN_DOMAIN = os.environ.get("MAILGUN_DOMAIN", "ai.complete.city")
@@ -165,3 +167,63 @@ def delete_item(item_id: str):
         raise HTTPException(status_code=404, detail="Item not found")
     table.delete_item(Key={"id": item_id})
     return {"deleted": item_id}
+
+
+# ── File uploads ──────────────────────────────────────────────
+
+
+@app.post("/upload/presign")
+def presign_upload(body: dict):
+    filename = body.get("filename", "")
+    content_type = body.get("content_type", "application/octet-stream")
+    if not filename:
+        raise HTTPException(status_code=400, detail="filename is required")
+
+    file_id = str(uuid.uuid4())
+    key = f"uploads/{file_id}/{filename}"
+
+    url = s3.generate_presigned_url(
+        "put_object",
+        Params={"Bucket": S3_BUCKET, "Key": key, "ContentType": content_type},
+        ExpiresIn=3600,
+    )
+
+    return {"upload_url": url, "file_id": file_id, "key": key}
+
+
+@app.post("/upload/complete")
+def complete_upload(body: dict):
+    file_id = body.get("file_id", "")
+    filename = body.get("filename", "")
+    content_type = body.get("content_type", "")
+    key = body.get("key", "")
+    size = body.get("size", 0)
+
+    if not file_id or not key:
+        raise HTTPException(status_code=400, detail="file_id and key are required")
+
+    file_url = f"https://{S3_BUCKET}.s3.us-east-1.amazonaws.com/{key}"
+
+    item = {
+        "id": file_id,
+        "type": "file",
+        "filename": filename,
+        "content_type": content_type,
+        "size": size,
+        "s3_key": key,
+        "url": file_url,
+        "uploaded_at": datetime.now(timezone.utc).isoformat(),
+    }
+    table.put_item(Item=item)
+
+    return item
+
+
+@app.get("/files")
+def list_files():
+    response = table.scan(
+        FilterExpression="attribute_exists(#t) AND #t = :file",
+        ExpressionAttributeNames={"#t": "type"},
+        ExpressionAttributeValues={":file": "file"},
+    )
+    return response.get("Items", [])
