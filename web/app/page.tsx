@@ -34,8 +34,9 @@ export default function Home() {
         </p>
 
         <p className="mt-4 text-sm text-muted-foreground/70 max-w-lg leading-relaxed italic">
-          Why Petryk? He&apos;s the restless, enthusiastic kid who never stops — always
-          curious, always collecting, always remembering. That energy felt right.
+          Why Petryk? Named after the hyperactive kid from the classic Ukrainian cartoon
+          that every Ukrainian child grows up with — restless, enthusiastic, never stops
+          collecting and remembering things. That energy felt right.
         </p>
         <p className="mt-2 text-xs text-muted-foreground/50">
           Built by <span className="text-muted-foreground/70 font-medium">Arihant Choudhary</span>
