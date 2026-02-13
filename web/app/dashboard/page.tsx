@@ -253,7 +253,7 @@ export default function DashboardPage() {
         const parts: string[] = [];
         if (doc.message) parts.push(`"${doc.message}"`);
         const ai = getAiFields(doc);
-        if (ai.length > 0) parts.push(`Petryk's take: ${ai[0][1].slice(0, 120)}`);
+        if (ai.length > 0) parts.push(`Petryk's take: ${ai[0][1]}`);
         return parts.join(" — ") || `Document ${doc.id}`;
       });
       return `I found ${matches.length} matching document${matches.length !== 1 ? "s" : ""}:\n\n${summaries.join("\n\n")}`;
