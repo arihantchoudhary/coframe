@@ -62,28 +62,70 @@ def describe_image_with_gemini(s3_key: str) -> str:
         return ""
 
 
-def get_petryk_opinion(data: dict) -> str:
+def extract_text_content(s3_key: str, content_type: str, filename: str) -> str:
+    """Extract text from uploaded files for LLM chat context."""
+    try:
+        obj = s3.get_object(Bucket=S3_BUCKET, Key=s3_key)
+        file_bytes = obj["Body"].read()
+
+        # Plain text files
+        if content_type in ("text/plain", "text/csv", "text/markdown") or \
+           filename.lower().endswith((".txt", ".csv", ".md", ".log")):
+            return file_bytes.decode("utf-8", errors="replace")[:50000]
+
+        # PDF
+        if content_type == "application/pdf" or filename.lower().endswith(".pdf"):
+            import PyPDF2
+            reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
+            pages = []
+            for page in reader.pages:
+                text = page.extract_text()
+                if text:
+                    pages.append(text)
+            return "\n\n".join(pages)[:50000]
+
+        # DOCX
+        if content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" or \
+           filename.lower().endswith(".docx"):
+            import docx
+            doc = docx.Document(io.BytesIO(file_bytes))
+            return "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())[:50000]
+
+        return ""
+    except Exception:
+        return ""
+
+
+def get_petryk_opinion(data: dict, image_descriptions: list | None = None) -> str:
     if not openai_client:
         return "Petryk is thinking about this..."
     try:
         context = {k: v for k, v in data.items() if k not in ("id", "email", "petryk_opinion")}
+
+        user_content = f"I just received this data:\n\n{json.dumps(context, indent=2, default=str)}"
+        if image_descriptions:
+            user_content += "\n\nThe following images were attached. Here are detailed descriptions of what's in them:\n"
+            for img in image_descriptions:
+                user_content += f"\n- {img['filename']}: {img['description']}"
+
+        system_prompt = (
+            "You are Petryk, a curious and hyperactive bot who is learning about "
+            "the world through data people send you. You currently know nothing — "
+            "every piece of information is new and exciting to you. "
+            "Give your brief opinion or analysis of the data you just received "
+            "in 2-3 sentences. Be enthusiastic but insightful. Speak in first person."
+        )
+        if image_descriptions:
+            system_prompt += (
+                " When images are included, focus your response on what you see in the images "
+                "based on the descriptions provided. Be specific about the visual content."
+            )
+
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are Petryk, a curious and hyperactive bot who is learning about "
-                        "the world through data people send you. You currently know nothing — "
-                        "every piece of information is new and exciting to you. "
-                        "Give your brief opinion or analysis of the data you just received "
-                        "in 2-3 sentences. Be enthusiastic but insightful. Speak in first person."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": f"I just received this data:\n\n{json.dumps(context, indent=2, default=str)}",
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
             ],
             max_tokens=200,
         )
@@ -192,8 +234,19 @@ def create_item(body: dict):
     item = {"id": item_id, **body, "email": email}
     table.put_item(Item=item)
 
-    # Get Petryk's opinion on the data
-    opinion = get_petryk_opinion(item)
+    # Enrich context with image descriptions from uploaded files
+    image_descriptions = []
+    if "files" in item and isinstance(item["files"], list):
+        for f in item["files"]:
+            fid = f.get("file_id", "")
+            if fid:
+                file_record = table.get_item(Key={"id": fid}).get("Item", {})
+                desc = file_record.get("image_description", "")
+                if desc:
+                    image_descriptions.append({"filename": f.get("filename", ""), "description": desc})
+
+    # Get Petryk's opinion on the data (with image context)
+    opinion = get_petryk_opinion(item, image_descriptions=image_descriptions)
     item["petryk_opinion"] = opinion
     table.put_item(Item=item)
 
@@ -273,6 +326,7 @@ def complete_upload(body: dict):
     content_type = body.get("content_type", "")
     key = body.get("key", "")
     size = body.get("size", 0)
+    email = body.get("email", "")
 
     if not file_id or not key:
         raise HTTPException(status_code=400, detail="file_id and key are required")
@@ -290,11 +344,19 @@ def complete_upload(body: dict):
         "uploaded_at": datetime.now(timezone.utc).isoformat(),
     }
 
+    if email:
+        item["email"] = email
+
     # If it's an image, get Gemini to describe it
     if content_type.startswith("image/"):
         description = describe_image_with_gemini(key)
         if description:
             item["image_description"] = description
+    else:
+        # Extract text content for text-based files
+        text_content = extract_text_content(key, content_type, filename)
+        if text_content:
+            item["text_content"] = text_content
 
     table.put_item(Item=item)
 
