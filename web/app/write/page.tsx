@@ -267,45 +267,45 @@ function WritePageInner() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{editingId ? "Edit Existing Memory" : "New Memory"}</CardTitle>
+          <CardTitle>{editingId ? "Edit Existing Memory" : "Hey, tell me something"}</CardTitle>
           <CardDescription>
             {editingId
-              ? "Update the fields below and attach new files. Petryk will update his memory."
-              : "Fill in what you need. Attach files by dragging or browsing. Petryk will send you a confirmation email."}
+              ? "Update whatever you want. Add new files. I'll remember the changes."
+              : "I'm Petryk. I don't know anything yet — but everything you tell me helps me understand you better."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Email */}
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Email <span className="text-destructive">*</span>
+              First, who are you? <span className="text-destructive">*</span>
             </label>
             <Input
               type="email"
               value={email}
               onChange={(e) => validateEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="your email so I can remember you"
             />
             {emailError && <p className="text-destructive text-xs">{emailError}</p>}
           </div>
 
           {/* Message */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Message / Notes</label>
+            <label className="text-sm font-medium">What do you want to tell me?</label>
             <Textarea
               className="min-h-[100px]"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Write anything here..."
+              placeholder="Anything — a thought, a fact, a story, instructions..."
             />
           </div>
 
           {/* Extra fields */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Custom Fields</label>
+              <label className="text-sm font-medium">Anything else I should know?</label>
               <Button variant="outline" size="sm" onClick={addField}>
-                + Add Field
+                + Add Detail
               </Button>
             </div>
             {extraFields.map((field, i) => (
@@ -331,7 +331,7 @@ function WritePageInner() {
 
           {/* File drop zone */}
           <div className="space-y-3">
-            <label className="text-sm font-medium">Attachments</label>
+            <label className="text-sm font-medium">Got files? Show me.</label>
             <div
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                 dragging ? "border-blue-500 bg-blue-500/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
@@ -343,9 +343,9 @@ function WritePageInner() {
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="text-3xl mb-2">{dragging ? "📥" : "📁"}</div>
-              <p className="text-sm font-medium">{dragging ? "Drop files here" : "Drag & drop files here"}</p>
+              <p className="text-sm font-medium">{dragging ? "Drop them here!" : "Drag & drop anything here"}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Images, videos, audio, PDF, PPTX, DOCX, and more
+                Images, videos, audio, PDFs, docs, presentations — I take it all
               </p>
               <input
                 ref={fileInputRef}
@@ -390,7 +390,7 @@ function WritePageInner() {
             disabled={loading || !!emailError || !email}
             className="w-full h-12 text-base"
           >
-            {loading ? "Sending..." : editingId ? "Update Memory" : "Send to Petryk"}
+            {loading ? "Thinking..." : editingId ? "Update My Memory" : "Teach Me This"}
           </Button>
         </CardContent>
       </Card>
@@ -407,9 +407,9 @@ function WritePageInner() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Saved <Badge variant="secondary">{(result as Record<string, unknown>).id as string}</Badge>
+              Got it! <Badge variant="secondary">{(result as Record<string, unknown>).id as string}</Badge>
             </CardTitle>
-            <CardDescription>Confirmation email sent to {email}</CardDescription>
+            <CardDescription>I&apos;ll remember this. Sent a confirmation to {email}.</CardDescription>
           </CardHeader>
           <CardContent>
             <pre className="bg-muted rounded-lg p-4 text-sm font-mono overflow-auto">
