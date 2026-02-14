@@ -28,6 +28,9 @@ const HIDDEN_KEYS = new Set([
   "url",
   "content_type",
   "size",
+  "s3_key",
+  "text_content",
+  "uploaded_at",
 ]);
 
 // Keys that look like AI-generated insights from Petryk / Gemini
@@ -168,28 +171,49 @@ export default function DashboardPage() {
   function buildContext(): string {
     if (documents.length === 0)
       return "No documents found for this user.";
+
+    const MAX_CONTENT_PER_DOC = 2000;
+    const MAX_TOTAL_CONTEXT = 60000;
+    let totalLength = 0;
+
     return documents
       .slice(0, 50)
       .map((doc, i) => {
+        if (totalLength > MAX_TOTAL_CONTEXT) return null;
+
         const parts: string[] = [`Document ${i + 1} (ID: ${doc.id})`];
         if (doc.message) parts.push(`Message: ${doc.message}`);
+        if (doc.type === "file" && doc.filename)
+          parts.push(`Filename: ${doc.filename}`);
+
         for (const [key, val] of Object.entries(doc)) {
           if (
-            !["id", "email", "files", "type", "url", "content_type", "size"].includes(key) &&
-            val &&
-            typeof val === "string" &&
-            key !== "message"
-          ) {
+            ["id", "email", "files", "type", "url", "content_type", "size", "s3_key", "message", "filename"].includes(key) ||
+            !val ||
+            typeof val !== "string"
+          ) continue;
+
+          if (key === "text_content" || key === "image_description") {
+            const truncated = val.length > MAX_CONTENT_PER_DOC
+              ? val.slice(0, MAX_CONTENT_PER_DOC) + "... [truncated]"
+              : val;
+            parts.push(`${key}: ${truncated}`);
+          } else {
             parts.push(`${key}: ${val}`);
           }
         }
+
         if (doc.files?.length > 0) {
           parts.push(
             `Files: ${doc.files.map((f: { filename: string }) => f.filename).join(", ")}`
           );
         }
-        return parts.join("\n  ");
+
+        const section = parts.join("\n  ");
+        totalLength += section.length;
+        return section;
       })
+      .filter(Boolean)
       .join("\n\n");
   }
 

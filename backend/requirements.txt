@@ -5,3 +5,5 @@ requests
 openai
 google-genai
 Pillow
+PyPDF2
+python-docx

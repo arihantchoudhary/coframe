@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,6 +61,8 @@ function fileIcon(contentType: string): string {
 }
 
 export default function UploadPage() {
+  const { user } = useUser();
+  const userEmail = user?.emailAddresses?.[0]?.emailAddress || "";
   const [uploads, setUploads] = useState<FileUpload[]>([]);
   const [files, setFiles] = useState<Record<string, unknown>[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -143,6 +146,7 @@ export default function UploadPage() {
             content_type: upload.file.type || "application/octet-stream",
             key,
             size: upload.file.size,
+            email: userEmail,
           }),
         });
         if (!completeRes.ok) throw new Error("Failed to save metadata");

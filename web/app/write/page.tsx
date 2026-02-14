@@ -174,7 +174,7 @@ function WritePageInner() {
     );
 
     console.log("[UPLOAD] Calling /upload/complete...");
-    const completeBody = { file_id, filename: af.file.name, content_type: af.file.type, key, size: af.file.size };
+    const completeBody = { file_id, filename: af.file.name, content_type: af.file.type, key, size: af.file.size, email };
     console.log("[UPLOAD] Complete request body:", completeBody);
     const completeRes = await fetch(`${API_URL}/upload/complete`, {
       method: "POST",

@@ -371,3 +371,37 @@ def list_files():
         ExpressionAttributeValues={":file": "file"},
     )
     return response.get("Items", [])
+
+
+# ── Chat ─────────────────────────────────────────────────────
+
+
+@app.post("/chat")
+def chat(body: dict):
+    if not openai_client:
+        raise HTTPException(status_code=503, detail="OpenAI not configured")
+
+    messages = body.get("messages", [])
+    system = body.get("system", "")
+
+    if not messages:
+        raise HTTPException(status_code=400, detail="messages are required")
+
+    oai_messages = []
+    if system:
+        oai_messages.append({"role": "system", "content": system})
+    for msg in messages:
+        oai_messages.append({
+            "role": msg.get("role", "user"),
+            "content": msg.get("content", ""),
+        })
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=oai_messages,
+            max_tokens=1000,
+        )
+        return {"response": response.choices[0].message.content.strip()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
